@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+
 static struct ASTNode* create_node(NodeType type) {
     struct ASTNode* node = (struct ASTNode*)malloc(sizeof(struct ASTNode));
     node->type = type;

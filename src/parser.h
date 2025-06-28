@@ -69,7 +69,8 @@ typedef struct {
     struct ASTNode* expression;
 } ReturnStatement;
 
-struct ASTNode {
+
+typedef struct ASTNode {
     NodeType type;
     int line;
     struct ASTNode *next; // For lists of statements
