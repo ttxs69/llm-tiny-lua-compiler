@@ -1,8 +1,6 @@
 #include "vm.h"
 #include "parser.h"
 #include "codegen.h"
-#include "bytecode.h"
-#include "value.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -21,14 +19,14 @@ static void runtime_error(VM* vm, const char* format, ...) {
     va_end(args);
     fputs("\n", stderr);
 
-    size_t instruction = vm->ip - vm->chunk->code - 1;
-    fprintf(stderr, "[line %d] in script\n", vm->chunk->lines[instruction]);
+    CallFrame* frame = &vm->frames[vm->frame_count - 1];
+    size_t instruction = frame->ip - frame->chunk->code - 1;
+    fprintf(stderr, "[line %d] in script\n", frame->chunk->lines[instruction]);
     vm->stack_top = vm->stack;
 }
 
 void init_vm(VM* vm) {
-    vm->chunk = NULL;
-    vm->ip = NULL;
+    vm->frame_count = 0;
     vm->stack_top = vm->stack;
     init_table(&vm->globals);
 }
@@ -63,6 +61,30 @@ static int is_falsey(Value value) {
     return value.type == VAL_NIL || (value.type == VAL_FALSE);
 }
 
+static int call_value(VM* vm, Value callee, int arg_count) {
+    if (callee.type != VAL_FUNCTION) {
+        runtime_error(vm, "Can only call functions.");
+        return 0;
+    }
+
+    struct Chunk* function = callee.as.function;
+    if (arg_count != function->arity) {
+        runtime_error(vm, "Expected %d arguments but got %d.", function->arity, arg_count);
+        return 0;
+    }
+
+    if (vm->frame_count == FRAMES_MAX) {
+        runtime_error(vm, "Stack overflow.");
+        return 0;
+    }
+
+    CallFrame* frame = &vm->frames[vm->frame_count++];
+    frame->chunk = function;
+    frame->ip = function->code;
+    frame->slots = vm->stack_top - arg_count;
+    return 1;
+}
+
 /**
  * @brief The main execution loop of the VM.
  * 
@@ -70,10 +92,12 @@ static int is_falsey(Value value) {
  * @return The result of the interpretation.
  */
 static InterpretResult run(VM* vm) {
+    CallFrame* frame = &vm->frames[vm->frame_count - 1];
+
 // Helper macros for reading from the bytecode
-#define READ_BYTE() (*vm->ip++)
-#define READ_SHORT() (vm->ip += 2, (uint16_t)((vm->ip[-2] << 8) | vm->ip[-1]))
-#define READ_CONSTANT() (vm->chunk->constants[READ_BYTE()])
+#define READ_BYTE() (*frame->ip++)
+#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+#define READ_CONSTANT() (frame->chunk->constants[READ_BYTE()])
 #define READ_STRING() (READ_CONSTANT().as.string)
 
     for (;;) {
@@ -85,7 +109,7 @@ static InterpretResult run(VM* vm) {
             printf(" ]");
         }
         printf("\n");
-        disassemble_instruction(vm->chunk, (int)(vm->ip - vm->chunk->code));
+        disassemble_instruction(frame->chunk, (int)(frame->ip - frame->chunk->code));
 #endif
         uint8_t instruction;
         switch (instruction = READ_BYTE()) {
@@ -107,6 +131,16 @@ static InterpretResult run(VM* vm) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 push(vm, value);
+                break;
+            }
+            case OP_GET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                push(vm, frame->slots[slot]);
+                break;
+            }
+            case OP_SET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                frame->slots[slot] = *(vm->stack_top - 1);
                 break;
             }
             case OP_POP: {
@@ -153,6 +187,16 @@ static InterpretResult run(VM* vm) {
                     push(vm, (Value){VAL_NUMBER, {.number = a.as.number / b.as.number}});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
+            case OP_NEGATE: {
+                Value value = pop(vm);
+                if (value.type == VAL_NUMBER) {
+                    push(vm, (Value){VAL_NUMBER, {.number = -value.as.number}});
+                } else {
+                    runtime_error(vm, "Operand must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 break;
@@ -247,17 +291,34 @@ static InterpretResult run(VM* vm) {
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
                 if (is_falsey(pop(vm))) {
-                    vm->ip += offset;
+                    frame->ip += offset;
                 }
                 break;
             }
             case OP_JUMP: {
                 int16_t offset = READ_SHORT();
-                vm->ip += offset;
+                frame->ip += offset;
+                break;
+            }
+            case OP_CALL: {
+                int arg_count = READ_BYTE();
+                if (!call_value(vm, *(vm->stack_top - 1 - arg_count), arg_count)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                frame = &vm->frames[vm->frame_count - 1];
                 break;
             }
             case OP_RETURN: {
-                return INTERPRET_OK;
+                Value result = pop(vm);
+                vm->frame_count--;
+                if (vm->frame_count == 0) {
+                    pop(vm);
+                    return INTERPRET_OK;
+                }
+                vm->stack_top = frame->slots;
+                push(vm, result);
+                frame = &vm->frames[vm->frame_count - 1];
+                break;
             }
             case OP_TRUE: {
                 push(vm, (Value){VAL_TRUE, {.boolean = 1}});
@@ -285,14 +346,17 @@ InterpretResult interpret(VM* vm, const char* source) {
     Chunk chunk;
     init_chunk(&chunk);
 
-    ASTNode* ast = parse(source);
+    struct ASTNode* ast = parse(source);
     if (ast == NULL) {
         return INTERPRET_COMPILE_ERROR;
     }
 
     generate_code(ast, &chunk);
-    vm->chunk = &chunk;
-    vm->ip = vm->chunk->code;
+    
+    CallFrame* frame = &vm->frames[vm->frame_count++];
+    frame->chunk = &chunk;
+    frame->ip = chunk.code;
+    frame->slots = vm->stack;
 
     InterpretResult result = run(vm);
 

@@ -88,6 +88,25 @@ static void skip_whitespace() {
                 line++;
                 advance();
                 break;
+            case '-':
+                if (source[1] == '-') {
+                    // Block comment
+                    if (source[2] == '[' && source[3] == '[') {
+                        source += 4;
+                        while (!(peek() == ']' && source[1] == ']')) {
+                            if (peek() == '\n') line++;
+                            advance();
+                        }
+                        source += 2;
+                    } else { // Single line comment
+                        while (peek() != '\n' && !is_at_end()) {
+                            advance();
+                        }
+                    }
+                } else {
+                    return;
+                }
+                break;
             default:
                 return;
         }
@@ -207,6 +226,7 @@ Token next_token() {
     switch (c) {
         case '(': source++; return make_token(TOKEN_LPAREN, start, 1);
         case ')': source++; return make_token(TOKEN_RPAREN, start, 1);
+        case ',': source++; return make_token(TOKEN_COMMA, start, 1);
         case '+': source++; return make_token(TOKEN_PLUS, start, 1);
         case '-': source++; return make_token(TOKEN_MINUS, start, 1);
         case '*': source++; return make_token(TOKEN_MUL, start, 1);

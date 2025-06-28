@@ -12,6 +12,7 @@ typedef enum {
     TOKEN_DIV,
     TOKEN_LPAREN,
     TOKEN_RPAREN,
+    TOKEN_COMMA,
     TOKEN_ASSIGN,
     TOKEN_PRINT,
     TOKEN_FUNCTION,

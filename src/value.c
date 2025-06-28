@@ -18,5 +18,8 @@ void print_value(Value value) {
         case VAL_NIL:
             printf("nil");
             break;
+        case VAL_FUNCTION:
+            printf("<function>");
+            break;
     }
 }

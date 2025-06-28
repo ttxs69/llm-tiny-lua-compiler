@@ -1,7 +1,6 @@
 #include "bytecode.h"
-#include "value.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static int simple_instruction(const char* name, int offset) {
     printf("%s\n", name);
@@ -101,6 +100,7 @@ void init_chunk(Chunk* chunk) {
     chunk->constants = NULL;
     chunk->constants_count = 0;
     chunk->constants_capacity = 0;
+    chunk->arity = 0;
 }
 
 /**

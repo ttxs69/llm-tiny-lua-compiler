@@ -1,3 +1,6 @@
 true
 false
 nil
+true is true
+false is false
+nil is false

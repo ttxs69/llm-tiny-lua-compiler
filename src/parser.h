@@ -19,6 +19,8 @@ typedef enum {
     NODE_TRUE,
     NODE_FALSE,
     NODE_NIL,
+    NODE_FUNCTION_DEF,
+    NODE_RETURN,
     NODE_UNKNOWN
 } NodeType;
 
@@ -57,7 +59,17 @@ typedef struct {
     struct ASTNode* argument;
 } FunctionCall;
 
-typedef struct ASTNode {
+typedef struct {
+    char* function_name;
+    struct ASTNode* parameters;
+    struct ASTNode* body;
+} FunctionDef;
+
+typedef struct {
+    struct ASTNode* expression;
+} ReturnStatement;
+
+struct ASTNode {
     NodeType type;
     int line;
     struct ASTNode *next; // For lists of statements
@@ -81,6 +93,8 @@ typedef struct ASTNode {
         ExpressionStatement expression_statement;
         Statements statements;
         FunctionCall function_call;
+        FunctionDef function_def;
+        ReturnStatement return_statement;
     } data;
 } ASTNode;
 
@@ -91,6 +105,6 @@ typedef struct {
     int panic_mode;
 } Parser;
 
-ASTNode* parse(const char* source);
+struct ASTNode* parse(const char* source);
 
 #endif // PARSER_H

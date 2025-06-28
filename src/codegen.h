@@ -4,6 +4,6 @@
 #include "parser.h"
 #include "bytecode.h"
 
-void generate_code(ASTNode* node, Chunk* chunk);
+void generate_code(struct ASTNode* node, Chunk* chunk);
 
 #endif // CODEGEN_H

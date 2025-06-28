@@ -1,6 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g -Isrc
 DBG_CFLAGS = -Wall -g -DDEBUG_TRACE_EXECUTION -Isrc
+RELEASE_CFLAGS = -Wall -O3 -Isrc
 
 SRCS = $(wildcard src/*.c)
 OBJS = $(patsubst src/%.c,obj/%.o,$(SRCS))
@@ -22,6 +23,9 @@ test: $(TARGET)
 
 debug: CFLAGS = $(DBG_CFLAGS)
 debug: clean all
+
+release: CFLAGS = $(RELEASE_CFLAGS)
+release: clean all
 
 clean:
 	rm -rf $(TARGET) obj output.txt test/*.output
