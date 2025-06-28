@@ -1,7 +1,5 @@
 #!/bin/bash
 
-make clean all
-
 for test_file in test/*.lua; do
     expected_file=${test_file%.lua}.expected
     output_file=${test_file%.lua}.output
