@@ -1,0 +1,1 @@
+The user wants to build a tiny Lua compiler in C. This compiler should take a Lua file as input and execute it. It should not be a transpiler (i.e., it should not convert Lua code to C code). The compiler should have its own bytecode format and a virtual machine to execute the bytecode. All commands must be run with a timeout to prevent hangs.
