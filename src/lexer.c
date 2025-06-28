@@ -119,6 +119,8 @@ static TokenType check_keyword(const char* start, int length, const char* rest, 
 static TokenType identifier_type(const char* start) {
     int length = source - start;
     switch (start[0]) {
+        case 'a': return check_keyword(start, length, "and", TOKEN_AND);
+        case 'o': return check_keyword(start, length, "or", TOKEN_OR);
         case 'p': return check_keyword(start, length, "print", TOKEN_PRINT);
         case 'f':
             if (length == 5 && memcmp(start, "false", 5) == 0) return TOKEN_FALSE;
@@ -132,7 +134,10 @@ static TokenType identifier_type(const char* start) {
             if (length == 4 && memcmp(start, "then", 4) == 0) return TOKEN_THEN;
             if (length == 4 && memcmp(start, "true", 4) == 0) return TOKEN_TRUE;
             break;
-        case 'n': return check_keyword(start, length, "nil", TOKEN_NIL);
+        case 'n':
+            if (length == 3 && memcmp(start, "nil", 3) == 0) return TOKEN_NIL;
+            if (length == 3 && memcmp(start, "not", 3) == 0) return TOKEN_NOT;
+            break;
         case 'w': return check_keyword(start, length, "while", TOKEN_WHILE);
         case 'd': return check_keyword(start, length, "do", TOKEN_DO);
         case 'l': return check_keyword(start, length, "local", TOKEN_LOCAL);

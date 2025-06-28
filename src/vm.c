@@ -59,6 +59,10 @@ static Value pop(VM* vm) {
     return *vm->stack_top;
 }
 
+static int is_falsey(Value value) {
+    return value.type == VAL_NIL || (value.type == VAL_FALSE);
+}
+
 /**
  * @brief The main execution loop of the VM.
  * 
@@ -157,7 +161,7 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, (Value){VAL_NUMBER, {.number = a.as.number > b.as.number}});
+                    push(vm, a.as.number > b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -168,7 +172,7 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, (Value){VAL_NUMBER, {.number = a.as.number >= b.as.number}});
+                    push(vm, a.as.number >= b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -179,7 +183,7 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, (Value){VAL_NUMBER, {.number = a.as.number < b.as.number}});
+                    push(vm, a.as.number < b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -190,7 +194,7 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, (Value){VAL_NUMBER, {.number = a.as.number <= b.as.number}});
+                    push(vm, a.as.number <= b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -201,7 +205,7 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, (Value){VAL_NUMBER, {.number = a.as.number == b.as.number}});
+                    push(vm, a.as.number == b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -212,11 +216,26 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, (Value){VAL_NUMBER, {.number = a.as.number != b.as.number}});
+                    push(vm, a.as.number != b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
+                break;
+            }
+            case OP_NOT:
+                push(vm, is_falsey(pop(vm)) ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
+                break;
+            case OP_AND: {
+                Value b = pop(vm);
+                Value a = pop(vm);
+                push(vm, !is_falsey(a) && !is_falsey(b) ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
+                break;
+            }
+            case OP_OR: {
+                Value b = pop(vm);
+                Value a = pop(vm);
+                push(vm, !is_falsey(a) || !is_falsey(b) ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
                 break;
             }
             case OP_PRINT: {
@@ -227,7 +246,7 @@ static InterpretResult run(VM* vm) {
             }
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
-                if (pop(vm).as.number == 0) {
+                if (is_falsey(pop(vm))) {
                     vm->ip += offset;
                 }
                 break;
@@ -254,6 +273,7 @@ static InterpretResult run(VM* vm) {
             }
         }
     }
+
 
 #undef READ_BYTE
 #undef READ_SHORT

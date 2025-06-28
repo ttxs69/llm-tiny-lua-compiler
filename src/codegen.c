@@ -49,6 +49,16 @@ static void generate_expression(ASTNode* node, Chunk* chunk) {
                 case TOKEN_LESS_EQUAL:    write_chunk(chunk, OP_LESS_EQUAL, node->line); break;
                 case TOKEN_EQUAL:         write_chunk(chunk, OP_EQUAL, node->line); break;
                 case TOKEN_NOT_EQUAL:     write_chunk(chunk, OP_NOT_EQUAL, node->line); break;
+                case TOKEN_AND:           write_chunk(chunk, OP_AND, node->line); break;
+                case TOKEN_OR:            write_chunk(chunk, OP_OR, node->line); break;
+                default: break; // Should not happen
+            }
+            break;
+        }
+        case NODE_UNARY_OP: {
+            generate_expression(node->data.unary_op.right, chunk);
+            switch (node->data.unary_op.op) {
+                case TOKEN_NOT: write_chunk(chunk, OP_NOT, node->line); break;
                 default: break; // Should not happen
             }
             break;

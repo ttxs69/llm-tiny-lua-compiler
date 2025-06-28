@@ -25,6 +25,9 @@ typedef enum {
     OP_TRUE,
     OP_FALSE,
     OP_NIL,
+    OP_NOT,
+    OP_AND,
+    OP_OR,
 } OpCode;
 
 typedef enum {

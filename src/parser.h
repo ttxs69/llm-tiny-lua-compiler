@@ -15,6 +15,7 @@ typedef enum {
     NODE_STATEMENTS,
     NODE_EXPRESSION_STATEMENT,
     NODE_FUNCTION_CALL,
+    NODE_UNARY_OP,
     NODE_TRUE,
     NODE_FALSE,
     NODE_NIL,
@@ -69,6 +70,10 @@ typedef struct ASTNode {
             TokenType op;
             struct ASTNode *right;
         } binary_op;
+        struct {
+            TokenType op;
+            struct ASTNode *right;
+        } unary_op;
         Assignment assignment;
         IfStatement if_statement;
         WhileStatement while_statement;

@@ -184,22 +184,33 @@ static ASTNode* primary() {
     return NULL; // Should not happen in valid code
 }
 
+static ASTNode* unary() {
+    if (match(TOKEN_NOT)) {
+        ASTNode* node = create_node(NODE_UNARY_OP);
+        node->line = parser.previous.line;
+        node->data.unary_op.op = parser.previous.type;
+        node->data.unary_op.right = unary();
+        return node;
+    }
+    return primary();
+}
+
 /**
  * @brief Parses a term.
  * 
- * term -> primary ( ( "*" | "/" ) primary )*
+ * term -> unary ( ( "*" | "/" ) unary )*
  * 
  * @return The parsed AST node.
  */
 static ASTNode* term() {
-    ASTNode* node = primary();
+    ASTNode* node = unary();
 
     while (match(TOKEN_MUL) || match(TOKEN_DIV)) {
         ASTNode* new_node = create_node(NODE_BINARY_OP);
         new_node->line = parser.previous.line;
         new_node->data.binary_op.op = parser.previous.type;
         new_node->data.binary_op.left = node;
-        new_node->data.binary_op.right = primary();
+        new_node->data.binary_op.right = unary();
         node = new_node;
     }
 
@@ -209,7 +220,7 @@ static ASTNode* term() {
 /**
  * @brief Parses an expression.
  * 
- * expression -> term ( ( "+" | "-" | ">" | "<" ) term )*
+ * expression -> term ( ( "+" | "-" | ">" | "<" | ">=" | "<=" | "==" | "~=" ) term )*
  * 
  * @return The parsed AST node.
  */
@@ -229,6 +240,32 @@ static ASTNode* expression() {
     return node;
 }
 
+static ASTNode* and_expression() {
+    ASTNode* node = expression();
+    while (match(TOKEN_AND)) {
+        ASTNode* new_node = create_node(NODE_BINARY_OP);
+        new_node->line = parser.previous.line;
+        new_node->data.binary_op.op = parser.previous.type;
+        new_node->data.binary_op.left = node;
+        new_node->data.binary_op.right = expression();
+        node = new_node;
+    }
+    return node;
+}
+
+static ASTNode* or_expression() {
+    ASTNode* node = and_expression();
+    while (match(TOKEN_OR)) {
+        ASTNode* new_node = create_node(NODE_BINARY_OP);
+        new_node->line = parser.previous.line;
+        new_node->data.binary_op.op = parser.previous.type;
+        new_node->data.binary_op.left = node;
+        new_node->data.binary_op.right = and_expression();
+        node = new_node;
+    }
+    return node;
+}
+
 /**
  * @brief Parses an if statement.
  * 
@@ -240,7 +277,7 @@ static ASTNode* if_statement() {
     ASTNode* node = create_node(NODE_IF);
     node->line = parser.previous.line;
 
-    node->data.if_statement.condition = expression();
+    node->data.if_statement.condition = or_expression();
     consume(TOKEN_THEN, "Expect 'then' after if condition.");
 
     ASTNode* then_branch = create_node(NODE_STATEMENTS);
@@ -304,7 +341,7 @@ static ASTNode* while_statement() {
     ASTNode* node = create_node(NODE_WHILE);
     node->line = parser.previous.line;
 
-    node->data.while_statement.condition = expression();
+    node->data.while_statement.condition = or_expression();
     consume(TOKEN_DO, "Expect 'do' after while condition.");
 
     ASTNode* body = create_node(NODE_STATEMENTS);
@@ -342,7 +379,7 @@ static ASTNode* while_statement() {
 static ASTNode* statement() {
     if (match(TOKEN_PRINT)) {
         consume(TOKEN_LPAREN, "Expect '(' after 'print'.");
-        ASTNode* expr = expression();
+        ASTNode* expr = or_expression();
         consume(TOKEN_RPAREN, "Expect ')' after expression.");
 
         ASTNode* print_node = create_node(NODE_PRINT);
@@ -363,7 +400,7 @@ static ASTNode* statement() {
         Token identifier_token = parser.current;
         advance();
         if (match(TOKEN_ASSIGN)) {
-            ASTNode* expr = expression();
+            ASTNode* expr = or_expression();
             ASTNode* assign_node = create_node(NODE_ASSIGN);
             assign_node->line = identifier_token.line;
             assign_node->data.assignment.identifier = (char*)malloc(identifier_token.length + 1);
@@ -377,7 +414,7 @@ static ASTNode* statement() {
         parser.previous = (Token){.type = TOKEN_UNKNOWN}; // Reset previous
     }
     
-    ASTNode* expr_node = expression();
+    ASTNode* expr_node = or_expression();
     if (expr_node) {
         ASTNode* stmt_node = create_node(NODE_EXPRESSION_STATEMENT);
         stmt_node->line = expr_node->line;
