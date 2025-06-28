@@ -1,9 +1,9 @@
 CC = gcc
-CFLAGS = -Wall -g
-DBG_CFLAGS = -Wall -g -DDEBUG_TRACE_EXECUTION
+CFLAGS = -Wall -g -Isrc
+DBG_CFLAGS = -Wall -g -DDEBUG_TRACE_EXECUTION -Isrc
 
-SRCS = main.c lexer.c parser.c codegen.c bytecode.c vm.c table.c value.c
-OBJS = $(SRCS:.c=.o)
+SRCS = $(wildcard src/*.c)
+OBJS = $(patsubst src/%.c,obj/%.o,$(SRCS))
 TARGET = luac
 
 .PHONY: all clean test debug
@@ -13,7 +13,8 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
 
-%.o: %.c
+obj/%.o: src/%.c
+	@mkdir -p obj
 	$(CC) $(CFLAGS) -c $< -o $@
 
 test: $(TARGET)
@@ -23,4 +24,4 @@ debug: CFLAGS = $(DBG_CFLAGS)
 debug: clean all
 
 clean:
-	rm -f $(TARGET) $(OBJS) output.txt test/*.output
+	rm -rf $(TARGET) obj output.txt test/*.output
