@@ -23,5 +23,6 @@ typedef struct Value {
 } Value;
 
 void print_value(Value value);
+void free_value(Value value);
 
 #endif // VALUE_H

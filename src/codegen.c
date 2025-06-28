@@ -1,6 +1,7 @@
 #include "codegen.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // Forward declarations
 static void generate_expression(struct ASTNode* node, Chunk* chunk);
@@ -193,21 +194,21 @@ static void generate_statement(struct ASTNode* node, Chunk* chunk) {
             break;
         }
         case NODE_FUNCTION_DEF: {
-            Chunk func_chunk;
-            init_chunk(&func_chunk);
+            Chunk* func_chunk = (Chunk*)malloc(sizeof(Chunk));
+            init_chunk(func_chunk);
             
             struct ASTNode* param = node->data.function_def.parameters;
             while (param) {
-                func_chunk.arity++;
+                func_chunk->arity++;
                 Value param_name = {VAL_STRING, {.string = strdup(param->data.identifier_name)}};
-                add_constant(&func_chunk, param_name);
+                add_constant(func_chunk, param_name);
                 param = param->next;
             }
 
-            generate_statement(node->data.function_def.body, &func_chunk);
-            write_chunk(&func_chunk, OP_RETURN, node->line);
+            generate_statement(node->data.function_def.body, func_chunk);
+            write_chunk(func_chunk, OP_RETURN, node->line);
 
-            Value func_val = {VAL_FUNCTION, {.function = (struct Chunk*) &func_chunk}};
+            Value func_val = {VAL_FUNCTION, {.function = func_chunk}};
             int constant_index = add_constant(chunk, func_val);
             write_chunk(chunk, OP_CONSTANT, node->line);
             write_chunk(chunk, constant_index, node->line);

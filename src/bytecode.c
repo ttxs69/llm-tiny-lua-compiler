@@ -1,4 +1,5 @@
 #include "bytecode.h"
+#include "value.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -160,9 +161,7 @@ void free_chunk(Chunk* chunk) {
     free(chunk->code);
     free(chunk->lines);
     for (int i = 0; i < chunk->constants_count; i++) {
-        if (chunk->constants[i].type == VAL_STRING) {
-            free(chunk->constants[i].as.string);
-        }
+        free_value(chunk->constants[i]);
     }
     free(chunk->constants);
     init_chunk(chunk);
