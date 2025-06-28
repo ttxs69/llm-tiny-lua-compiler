@@ -200,9 +200,34 @@ Token next_token() {
         case '-': source++; return make_token(TOKEN_MINUS, start, 1);
         case '*': source++; return make_token(TOKEN_MUL, start, 1);
         case '/': source++; return make_token(TOKEN_DIV, start, 1);
-        case '=': source++; return make_token(TOKEN_ASSIGN, start, 1);
-        case '>': source++; return make_token(TOKEN_GREATER, start, 1);
-        case '<': source++; return make_token(TOKEN_LESS, start, 1);
+        case '=':
+            source++;
+            if (peek() == '=') {
+                source++;
+                return make_token(TOKEN_EQUAL, start, 2);
+            }
+            return make_token(TOKEN_ASSIGN, start, 1);
+        case '~':
+            source++;
+            if (peek() == '=') {
+                source++;
+                return make_token(TOKEN_NOT_EQUAL, start, 2);
+            }
+            break;
+        case '>':
+            source++;
+            if (peek() == '=') {
+                source++;
+                return make_token(TOKEN_GREATER_EQUAL, start, 2);
+            }
+            return make_token(TOKEN_GREATER, start, 1);
+        case '<':
+            source++;
+            if (peek() == '=') {
+                source++;
+                return make_token(TOKEN_LESS_EQUAL, start, 2);
+            }
+            return make_token(TOKEN_LESS, start, 1);
         case '"': return string();
     }
 

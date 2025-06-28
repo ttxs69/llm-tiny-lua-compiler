@@ -16,7 +16,11 @@ typedef enum {
     OP_JUMP_IF_FALSE,
     OP_JUMP,
     OP_GREATER,
+    OP_GREATER_EQUAL,
     OP_LESS,
+    OP_LESS_EQUAL,
+    OP_EQUAL,
+    OP_NOT_EQUAL,
     OP_RETURN,
 } OpCode;
 

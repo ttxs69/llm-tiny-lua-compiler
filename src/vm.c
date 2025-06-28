@@ -164,11 +164,55 @@ static InterpretResult run(VM* vm) {
                 }
                 break;
             }
+            case OP_GREATER_EQUAL: {
+                Value b = pop(vm);
+                Value a = pop(vm);
+                if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
+                    push(vm, (Value){VAL_NUMBER, {.number = a.as.number >= b.as.number}});
+                } else {
+                    runtime_error(vm, "Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
             case OP_LESS: {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
                     push(vm, (Value){VAL_NUMBER, {.number = a.as.number < b.as.number}});
+                } else {
+                    runtime_error(vm, "Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
+            case OP_LESS_EQUAL: {
+                Value b = pop(vm);
+                Value a = pop(vm);
+                if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
+                    push(vm, (Value){VAL_NUMBER, {.number = a.as.number <= b.as.number}});
+                } else {
+                    runtime_error(vm, "Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
+            case OP_EQUAL: {
+                Value b = pop(vm);
+                Value a = pop(vm);
+                if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
+                    push(vm, (Value){VAL_NUMBER, {.number = a.as.number == b.as.number}});
+                } else {
+                    runtime_error(vm, "Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
+            case OP_NOT_EQUAL: {
+                Value b = pop(vm);
+                Value a = pop(vm);
+                if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
+                    push(vm, (Value){VAL_NUMBER, {.number = a.as.number != b.as.number}});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;

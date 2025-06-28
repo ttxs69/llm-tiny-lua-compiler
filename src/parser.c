@@ -204,7 +204,8 @@ static ASTNode* term() {
 static ASTNode* expression() {
     ASTNode* node = term();
 
-    while (match(TOKEN_PLUS) || match(TOKEN_MINUS) || match(TOKEN_GREATER) || match(TOKEN_LESS)) {
+    while (match(TOKEN_PLUS) || match(TOKEN_MINUS) || match(TOKEN_GREATER) || match(TOKEN_LESS) ||
+           match(TOKEN_GREATER_EQUAL) || match(TOKEN_LESS_EQUAL) || match(TOKEN_EQUAL) || match(TOKEN_NOT_EQUAL)) {
         ASTNode* new_node = create_node(NODE_BINARY_OP);
         new_node->line = parser.previous.line;
         new_node->data.binary_op.op = parser.previous.type;

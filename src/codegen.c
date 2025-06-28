@@ -39,12 +39,16 @@ static void generate_expression(ASTNode* node, Chunk* chunk) {
             generate_expression(node->data.binary_op.left, chunk);
             generate_expression(node->data.binary_op.right, chunk);
             switch (node->data.binary_op.op) {
-                case TOKEN_PLUS:    write_chunk(chunk, OP_ADD, node->line); break;
-                case TOKEN_MINUS:   write_chunk(chunk, OP_SUBTRACT, node->line); break;
-                case TOKEN_MUL:     write_chunk(chunk, OP_MULTIPLY, node->line); break;
-                case TOKEN_DIV:     write_chunk(chunk, OP_DIVIDE, node->line); break;
-                case TOKEN_GREATER: write_chunk(chunk, OP_GREATER, node->line); break;
-                case TOKEN_LESS:    write_chunk(chunk, OP_LESS, node->line); break;
+                case TOKEN_PLUS:          write_chunk(chunk, OP_ADD, node->line); break;
+                case TOKEN_MINUS:         write_chunk(chunk, OP_SUBTRACT, node->line); break;
+                case TOKEN_MUL:           write_chunk(chunk, OP_MULTIPLY, node->line); break;
+                case TOKEN_DIV:           write_chunk(chunk, OP_DIVIDE, node->line); break;
+                case TOKEN_GREATER:       write_chunk(chunk, OP_GREATER, node->line); break;
+                case TOKEN_GREATER_EQUAL: write_chunk(chunk, OP_GREATER_EQUAL, node->line); break;
+                case TOKEN_LESS:          write_chunk(chunk, OP_LESS, node->line); break;
+                case TOKEN_LESS_EQUAL:    write_chunk(chunk, OP_LESS_EQUAL, node->line); break;
+                case TOKEN_EQUAL:         write_chunk(chunk, OP_EQUAL, node->line); break;
+                case TOKEN_NOT_EQUAL:     write_chunk(chunk, OP_NOT_EQUAL, node->line); break;
                 default: break; // Should not happen
             }
             break;
