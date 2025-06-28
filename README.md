@@ -33,14 +33,6 @@ make
 
 This will create the `luac` executable in the root directory.
 
-To build the compiler with debug tracing enabled, run:
-
-```bash
-make debug
-```
-
-### Cleaning
-
 To clean up the build artifacts, run:
 ```bash
 make clean
@@ -55,3 +47,15 @@ make test
 ```
 
 This will run the `run_tests.sh` script, which compares the output of the compiler with the expected output for a set of test cases.
+
+To run the tests with debug tracing enabled, pass the `ARGS` variable to the `make` command with the desired flags.
+
+- `-p`: Enable parser tracing.
+- `-c`: Enable codegen tracing.
+- `-e`: Enable execution tracing.
+
+For example, to run the tests with all tracing enabled, use:
+
+```bash
+make test ARGS="-pce"
+```

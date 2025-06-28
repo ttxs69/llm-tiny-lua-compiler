@@ -1,4 +1,5 @@
 #include "codegen.h"
+#include "debug.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +15,9 @@ static void generate_statement(struct ASTNode* node, Chunk* chunk);
  * @param chunk The chunk to write the code to.
  */
 static void generate_expression(struct ASTNode* node, Chunk* chunk) {
+#ifdef DEBUG_TRACE_CODEGEN
+    debug_log("Generating expression for node type %s\n", node_type_to_string(node->type));
+#endif
     switch (node->type) {
         case NODE_NUMBER: {
             Value value = {VAL_NUMBER, {.number = node->data.number_value}};
@@ -30,10 +34,10 @@ static void generate_expression(struct ASTNode* node, Chunk* chunk) {
             break;
         }
         case NODE_IDENTIFIER: {
-            // Check if the identifier is a local variable (a parameter)
+            // Check if the identifier is a local variable
             int local_index = -1;
-            for (int i = 0; i < chunk->arity; i++) {
-                if (strcmp(chunk->constants[i].as.string, node->data.identifier_name) == 0) {
+            for (int i = 0; i < chunk->locals_count; i++) {
+                if (strcmp(chunk->locals[i], node->data.identifier_name) == 0) {
                     local_index = i;
                     break;
                 }
@@ -64,8 +68,7 @@ static void generate_expression(struct ASTNode* node, Chunk* chunk) {
                 case TOKEN_LESS_EQUAL:    write_chunk(chunk, OP_LESS_EQUAL, node->line); break;
                 case TOKEN_EQUAL:         write_chunk(chunk, OP_EQUAL, node->line); break;
                 case TOKEN_NOT_EQUAL:     write_chunk(chunk, OP_NOT_EQUAL, node->line); break;
-                case TOKEN_AND:           write_chunk(chunk, OP_AND, node->line); break;
-                case TOKEN_OR:            write_chunk(chunk, OP_OR, node->line); break;
+                case TOKEN_CONCAT:        write_chunk(chunk, OP_CONCAT, node->line); break;
                 default: break; // Should not happen
             }
             break;
@@ -75,6 +78,38 @@ static void generate_expression(struct ASTNode* node, Chunk* chunk) {
             switch (node->data.unary_op.op) {
                 case TOKEN_MINUS: write_chunk(chunk, OP_NEGATE, node->line); break;
                 case TOKEN_NOT: write_chunk(chunk, OP_NOT, node->line); break;
+                default: break; // Should not happen
+            }
+            break;
+        }
+        case NODE_LOGICAL_OP: {
+            generate_expression(node->data.logical_op.left, chunk);
+            switch (node->data.logical_op.op) {
+                case TOKEN_AND: {
+                    write_chunk(chunk, OP_JUMP_IF_FALSE, node->line);
+                    int end_jump = chunk->count;
+                    write_short(chunk, 0, node->line);
+                    write_chunk(chunk, OP_POP, node->line);
+                    generate_expression(node->data.logical_op.right, chunk);
+                    chunk->code[end_jump] = (chunk->count - end_jump - 2) >> 8;
+                    chunk->code[end_jump + 1] = (chunk->count - end_jump - 2) & 0xFF;
+                    break;
+                }
+                case TOKEN_OR: {
+                    write_chunk(chunk, OP_JUMP_IF_FALSE, node->line);
+                    int else_jump = chunk->count;
+                    write_short(chunk, 0, node->line);
+                    write_chunk(chunk, OP_JUMP, node->line);
+                    int end_jump = chunk->count;
+                    write_short(chunk, 0, node->line);
+                    chunk->code[else_jump] = (chunk->count - else_jump - 2) >> 8;
+                    chunk->code[else_jump + 1] = (chunk->count - else_jump - 2) & 0xFF;
+                    write_chunk(chunk, OP_POP, node->line);
+                    generate_expression(node->data.logical_op.right, chunk);
+                    chunk->code[end_jump] = (chunk->count - end_jump - 2) >> 8;
+                    chunk->code[end_jump + 1] = (chunk->count - end_jump - 2) & 0xFF;
+                    break;
+                }
                 default: break; // Should not happen
             }
             break;
@@ -118,7 +153,11 @@ static void generate_expression(struct ASTNode* node, Chunk* chunk) {
  * @param chunk The chunk to write the code to.
  */
 static void generate_statement(struct ASTNode* node, Chunk* chunk) {
+#ifdef DEBUG_TRACE_CODEGEN
+    debug_log("Generating statement for node type %s\n", node_type_to_string(node->type));
+#endif
     switch (node->type) {
+
         case NODE_PRINT:
             generate_expression(node->data.print_statement.expression, chunk);
             write_chunk(chunk, OP_PRINT, node->line);
@@ -129,7 +168,6 @@ static void generate_statement(struct ASTNode* node, Chunk* chunk) {
             int constant_index = add_constant(chunk, value);
             write_chunk(chunk, OP_SET_GLOBAL, node->line);
             write_chunk(chunk, constant_index, node->line);
-            write_chunk(chunk, OP_POP, node->line);
             break;
         }
         case NODE_IF: {
@@ -196,12 +234,14 @@ static void generate_statement(struct ASTNode* node, Chunk* chunk) {
         case NODE_FUNCTION_DEF: {
             Chunk* func_chunk = (Chunk*)malloc(sizeof(Chunk));
             init_chunk(func_chunk);
+            func_chunk->locals_count = 0;
             
             struct ASTNode* param = node->data.function_def.parameters;
             while (param) {
                 func_chunk->arity++;
-                Value param_name = {VAL_STRING, {.string = strdup(param->data.identifier_name)}};
-                add_constant(func_chunk, param_name);
+                func_chunk->locals_count++;
+                func_chunk->locals = (char**)realloc(func_chunk->locals, sizeof(char*) * func_chunk->locals_count);
+                func_chunk->locals[func_chunk->locals_count - 1] = strdup(param->data.identifier_name);
                 param = param->next;
             }
 
@@ -222,6 +262,18 @@ static void generate_statement(struct ASTNode* node, Chunk* chunk) {
         case NODE_RETURN: {
             generate_expression(node->data.return_statement.expression, chunk);
             write_chunk(chunk, OP_RETURN, node->line);
+            break;
+        }
+        case NODE_LOCAL_DECLARATION: {
+            if (node->data.local_declaration.expression) {
+                generate_expression(node->data.local_declaration.expression, chunk);
+            } else {
+                write_chunk(chunk, OP_NIL, node->line);
+            }
+            chunk->locals = (char**)realloc(chunk->locals, sizeof(char*) * (chunk->locals_count + 1));
+            chunk->locals[chunk->locals_count] = strdup(node->data.local_declaration.identifier);
+            write_chunk(chunk, OP_SET_LOCAL, node->line);
+            write_chunk(chunk, chunk->locals_count++, node->line);
             break;
         }
         default:

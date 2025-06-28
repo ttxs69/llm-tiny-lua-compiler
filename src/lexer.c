@@ -46,7 +46,7 @@ static Token make_token(TokenType type, const char* start, int length) {
  */
 static Token error_token() {
     Token token;
-    token.type = TOKEN_UNKNOWN;
+    token.type = TOKEN_EOF;
     token.start = "Error";
     token.length = 5;
     token.line = line;
@@ -113,21 +113,7 @@ static void skip_whitespace() {
     }
 }
 
-/**
- * @brief Checks if the given identifier is a keyword.
- *
- * @param start A pointer to the start of the identifier's lexeme.
- * @param length The length of the identifier's lexeme.
- * @param rest The rest of the keyword to check.
- * @param type The type of the keyword.
- * @return The type of the keyword if it matches, TOKEN_IDENTIFIER otherwise.
- */
-static TokenType check_keyword(const char* start, int length, const char* rest, TokenType type) {
-    if (source - start == strlen(rest) && length == strlen(rest) && memcmp(start, rest, length) == 0) {
-        return type;
-    }
-    return TOKEN_IDENTIFIER;
-}
+
 
 /**
  * @brief Determines the type of an identifier.
@@ -136,32 +122,20 @@ static TokenType check_keyword(const char* start, int length, const char* rest, 
  * @return The type of the identifier.
  */
 static TokenType identifier_type(const char* start) {
+    static const char* keywords[] = {
+        "and", "or", "print", "function", "false", "end", "else", "if", "then", "true", "nil", "not", "while", "do", "local", "return", NULL
+    };
+    static TokenType types[] = {
+        TOKEN_AND, TOKEN_OR, TOKEN_PRINT, TOKEN_FUNCTION, TOKEN_FALSE, TOKEN_END, TOKEN_ELSE, TOKEN_IF, TOKEN_THEN, TOKEN_TRUE, TOKEN_NIL, TOKEN_NOT, TOKEN_WHILE, TOKEN_DO, TOKEN_LOCAL, TOKEN_RETURN
+    };
+
     int length = source - start;
-    switch (start[0]) {
-        case 'a': return check_keyword(start, length, "and", TOKEN_AND);
-        case 'o': return check_keyword(start, length, "or", TOKEN_OR);
-        case 'p': return check_keyword(start, length, "print", TOKEN_PRINT);
-        case 'f':
-            if (length == 5 && memcmp(start, "false", 5) == 0) return TOKEN_FALSE;
-            return check_keyword(start, length, "function", TOKEN_FUNCTION);
-        case 'e':
-            if (length == 3 && memcmp(start, "end", 3) == 0) return TOKEN_END;
-            if (length == 4 && memcmp(start, "else", 4) == 0) return TOKEN_ELSE;
-            break;
-        case 'i': return check_keyword(start, length, "if", TOKEN_IF);
-        case 't':
-            if (length == 4 && memcmp(start, "then", 4) == 0) return TOKEN_THEN;
-            if (length == 4 && memcmp(start, "true", 4) == 0) return TOKEN_TRUE;
-            break;
-        case 'n':
-            if (length == 3 && memcmp(start, "nil", 3) == 0) return TOKEN_NIL;
-            if (length == 3 && memcmp(start, "not", 3) == 0) return TOKEN_NOT;
-            break;
-        case 'w': return check_keyword(start, length, "while", TOKEN_WHILE);
-        case 'd': return check_keyword(start, length, "do", TOKEN_DO);
-        case 'l': return check_keyword(start, length, "local", TOKEN_LOCAL);
-        case 'r': return check_keyword(start, length, "return", TOKEN_RETURN);
+    for (int i = 0; keywords[i]; i++) {
+        if (strlen(keywords[i]) == length && memcmp(start, keywords[i], length) == 0) {
+            return types[i];
+        }
     }
+
     return TOKEN_IDENTIFIER;
 }
 
@@ -260,6 +234,13 @@ Token next_token() {
             }
             return make_token(TOKEN_LESS, start, 1);
         case '"': return string();
+        case '.':
+            source++;
+            if (peek() == '.') {
+                source++;
+                return make_token(TOKEN_CONCAT, start, 2);
+            }
+            break;
     }
 
     return error_token();

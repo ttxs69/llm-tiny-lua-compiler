@@ -2,6 +2,7 @@
 #define VALUE_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 typedef enum {
     VAL_NUMBER,
@@ -23,6 +24,7 @@ typedef struct Value {
 } Value;
 
 void print_value(Value value);
+void print_value_to_stream(FILE* stream, Value value);
 void free_value(Value value);
 
 #endif // VALUE_H

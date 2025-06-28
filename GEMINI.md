@@ -21,3 +21,22 @@ My goal is to implement a tiny Lua compiler in C with the help of an LLM.
     2.  Refactor the code to improve readability, maintainability, and error handling.
     3.  Run the tests to ensure that the refactoring did not break anything.
 *   All shell commands executed by the agent must use a timeout to prevent hangs. For example: `timeout 30s make test`.
+
+## Debugging
+
+The compiler has a debugging feature that can be enabled by passing flags to the test script.
+
+To run the tests with debugging enabled, pass the `ARGS` variable to the `make` command with the desired flags:
+
+- `-p`: Enable parser tracing.
+- `-c`: Enable codegen tracing.
+- `-e`: Enable execution tracing.
+
+For example, to run the tests with all tracing enabled, use:
+
+```bash
+make test ARGS="-pce"
+```
+
+This will generate a `.log` file for each test, containing a trace of the execution.
+

@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
 /**
  * @brief Prints a runtime error message.
@@ -58,7 +60,7 @@ static Value pop(VM* vm) {
 }
 
 static int is_falsey(Value value) {
-    return value.type == VAL_NIL || (value.type == VAL_FALSE);
+    return value.type == VAL_NIL || (value.type == VAL_FALSE && value.as.boolean == false);
 }
 
 static int call_value(VM* vm, Value callee, int arg_count) {
@@ -102,15 +104,17 @@ static InterpretResult run(VM* vm) {
 
     for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
-        printf("          ");
+        fprintf(stderr, "          ");
         for (Value* slot = vm->stack; slot < vm->stack_top; slot++) {
-            printf("[ ");
-            print_value(*slot);
-            printf(" ]");
+            fprintf(stderr, "[ ");
+            print_value_to_stream(stderr, *slot);
+            fprintf(stderr, " ]");
         }
-        printf("\n");
-        disassemble_instruction(frame->chunk, (int)(frame->ip - frame->chunk->code));
+        fprintf(stderr, "\n");
+        disassemble_instruction_to_stream(stderr, frame->chunk, (int)(frame->ip - frame->chunk->code));
 #endif
+
+
         uint8_t instruction;
         switch (instruction = READ_BYTE()) {
             case OP_CONSTANT: {
@@ -205,7 +209,7 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, a.as.number > b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
+                    push(vm, a.as.number > b.as.number ? (Value){VAL_TRUE, {.boolean = 1}} : (Value){VAL_FALSE, {.boolean = 0}});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -216,7 +220,7 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, a.as.number >= b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
+                    push(vm, a.as.number >= b.as.number ? (Value){VAL_TRUE, {.boolean = 1}} : (Value){VAL_FALSE, {.boolean = 0}});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -227,7 +231,7 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, a.as.number < b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
+                    push(vm, a.as.number < b.as.number ? (Value){VAL_TRUE, {.boolean = 1}} : (Value){VAL_FALSE, {.boolean = 0}});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -238,7 +242,7 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, a.as.number <= b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
+                    push(vm, a.as.number <= b.as.number ? (Value){VAL_TRUE, {.boolean = 1}} : (Value){VAL_FALSE, {.boolean = 0}});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -249,7 +253,7 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, a.as.number == b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
+                    push(vm, a.as.number == b.as.number ? (Value){VAL_TRUE, {.boolean = 1}} : (Value){VAL_FALSE, {.boolean = 0}});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -260,7 +264,7 @@ static InterpretResult run(VM* vm) {
                 Value b = pop(vm);
                 Value a = pop(vm);
                 if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
-                    push(vm, a.as.number != b.as.number ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
+                    push(vm, a.as.number != b.as.number ? (Value){VAL_TRUE, {.boolean = 1}} : (Value){VAL_FALSE, {.boolean = 0}});
                 } else {
                     runtime_error(vm, "Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
@@ -268,18 +272,22 @@ static InterpretResult run(VM* vm) {
                 break;
             }
             case OP_NOT:
-                push(vm, is_falsey(pop(vm)) ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
+                push(vm, is_falsey(pop(vm)) ? (Value){VAL_TRUE, {.boolean = 1}} : (Value){VAL_FALSE, {.boolean = 0}});
                 break;
-            case OP_AND: {
+            case OP_CONCAT: {
                 Value b = pop(vm);
                 Value a = pop(vm);
-                push(vm, !is_falsey(a) && !is_falsey(b) ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
-                break;
-            }
-            case OP_OR: {
-                Value b = pop(vm);
-                Value a = pop(vm);
-                push(vm, !is_falsey(a) || !is_falsey(b) ? (Value){VAL_TRUE} : (Value){VAL_FALSE});
+                if (a.type == VAL_STRING && b.type == VAL_STRING) {
+                    int length = strlen(a.as.string) + strlen(b.as.string);
+                    char* result = (char*)malloc(length + 1);
+                    memcpy(result, a.as.string, strlen(a.as.string));
+                    memcpy(result + strlen(a.as.string), b.as.string, strlen(b.as.string));
+                    result[length] = '\0';
+                    push(vm, (Value){VAL_STRING, {.string = result}});
+                } else {
+                    runtime_error(vm, "Operands must be strings.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
                 break;
             }
             case OP_PRINT: {
@@ -290,7 +298,7 @@ static InterpretResult run(VM* vm) {
             }
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
-                if (is_falsey(pop(vm))) {
+                if (is_falsey(*(vm->stack_top - 1))) {
                     frame->ip += offset;
                 }
                 break;
@@ -321,11 +329,11 @@ static InterpretResult run(VM* vm) {
                 break;
             }
             case OP_TRUE: {
-                push(vm, (Value){VAL_TRUE, {.boolean = 1}});
+                push(vm, (Value){VAL_TRUE, {.boolean = true}});
                 break;
             }
             case OP_FALSE: {
-                push(vm, (Value){VAL_FALSE, {.boolean = 0}});
+                push(vm, (Value){VAL_FALSE, {.boolean = false}});
                 break;
             }
             case OP_NIL: {

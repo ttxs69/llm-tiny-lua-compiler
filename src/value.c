@@ -3,27 +3,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void print_value(Value value) {
+void print_value_to_stream(FILE* stream, Value value) {
     switch (value.type) {
         case VAL_NUMBER:
-            printf("%f", value.as.number);
+            fprintf(stream, "%f", value.as.number);
             break;
         case VAL_STRING:
-            printf("%s", value.as.string);
+            fprintf(stream, "%s", value.as.string);
             break;
         case VAL_TRUE:
-            printf("true");
+            fprintf(stream, "true");
             break;
         case VAL_FALSE:
-            printf("false");
+            fprintf(stream, "false");
             break;
         case VAL_NIL:
-            printf("nil");
+            fprintf(stream, "nil");
             break;
         case VAL_FUNCTION:
-            printf("<function>");
+            fprintf(stream, "<function>");
             break;
     }
+}
+
+void print_value(Value value) {
+    print_value_to_stream(stdout, value);
 }
 
 void free_value(Value value) {

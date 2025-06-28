@@ -14,6 +14,8 @@ typedef struct Chunk {
     int constants_count;
     int constants_capacity;
     int arity;
+    int locals_count;
+    char** locals;
 } Chunk;
 
 #endif // CHUNK_H

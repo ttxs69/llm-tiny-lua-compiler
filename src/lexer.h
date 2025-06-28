@@ -28,14 +28,15 @@ typedef enum {
     TOKEN_NOT_EQUAL,
     TOKEN_WHILE,
     TOKEN_DO,
-    TOKEN_LOCAL,
-    TOKEN_RETURN,
-    TOKEN_TRUE,
-    TOKEN_FALSE,
     TOKEN_NIL,
+    TOKEN_NOT,
+    TOKEN_CONCAT,
     TOKEN_AND,
     TOKEN_OR,
-    TOKEN_NOT,
+    TOKEN_TRUE,
+    TOKEN_FALSE,
+    TOKEN_RETURN,
+    TOKEN_LOCAL,
     TOKEN_UNKNOWN
 } TokenType;
 

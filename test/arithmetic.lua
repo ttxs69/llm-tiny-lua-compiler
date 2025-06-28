@@ -1,5 +1,5 @@
 print(1 + 2 * 3)
 print((1 + 2) * 3)
-print(10 - 4 / 2)
-print(-5 + 2)
+print(10 - 4 / 2 * 3)
+print(5 / -2 + 2)
 print(2.5 * 2)
