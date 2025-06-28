@@ -44,5 +44,8 @@ obj/release/%.o: src/%.c
 test: all
 	./run_tests.sh
 
+test-debug: debug
+	./run_tests.sh -d
+
 clean:
 	rm -rf $(TARGET) $(DBG_TARGET) $(RELEASE_TARGET) obj test/*.output
