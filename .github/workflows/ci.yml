@@ -35,4 +35,4 @@ jobs:
     - name: Run smoketest
       run: |
         make debug
-        ./luac test/arithmetic.lua
+        ./luac-debug test/arithmetic.lua
