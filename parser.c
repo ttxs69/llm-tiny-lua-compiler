@@ -3,6 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 
+static ASTNode* create_node(NodeType type) {
+    ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
+    node->type = type;
+    node->next = NULL;
+    return node;
+}
+
 /**
  * @brief The parser state.
  */
@@ -113,8 +120,7 @@ static ASTNode* statement();
  */
 static ASTNode* primary() {
     if (match(TOKEN_NUMBER)) {
-        ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-        node->type = NODE_NUMBER;
+        ASTNode* node = create_node(NODE_NUMBER);
         node->line = parser.previous.line;
         char* num_str = (char*)malloc(parser.previous.length + 1);
         memcpy(num_str, parser.previous.start, parser.previous.length);
@@ -125,8 +131,7 @@ static ASTNode* primary() {
     }
 
     if (match(TOKEN_STRING)) {
-        ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-        node->type = NODE_STRING;
+        ASTNode* node = create_node(NODE_STRING);
         node->line = parser.previous.line;
         node->data.string_value = (char*)malloc(parser.previous.length - 1);
         memcpy(node->data.string_value, parser.previous.start + 1, parser.previous.length - 2);
@@ -137,8 +142,7 @@ static ASTNode* primary() {
     if (match(TOKEN_IDENTIFIER)) {
         // Lookahead to see if it's a function call
         if (!is_at_end() && check(TOKEN_LPAREN)) {
-            ASTNode* call_node = (ASTNode*)malloc(sizeof(ASTNode));
-            call_node->type = NODE_FUNCTION_CALL;
+            ASTNode* call_node = create_node(NODE_FUNCTION_CALL);
             call_node->line = parser.previous.line;
             call_node->data.function_call.function_name = (char*)malloc(parser.previous.length + 1);
             memcpy(call_node->data.function_call.function_name, parser.previous.start, parser.previous.length);
@@ -150,8 +154,7 @@ static ASTNode* primary() {
             return call_node;
         }
 
-        ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-        node->type = NODE_IDENTIFIER;
+        ASTNode* node = create_node(NODE_IDENTIFIER);
         node->line = parser.previous.line;
         node->data.identifier_name = (char*)malloc(parser.previous.length + 1);
         memcpy(node->data.identifier_name, parser.previous.start, parser.previous.length);
@@ -180,8 +183,7 @@ static ASTNode* term() {
     ASTNode* node = primary();
 
     while (match(TOKEN_MUL) || match(TOKEN_DIV)) {
-        ASTNode* new_node = (ASTNode*)malloc(sizeof(ASTNode));
-        new_node->type = NODE_BINARY_OP;
+        ASTNode* new_node = create_node(NODE_BINARY_OP);
         new_node->line = parser.previous.line;
         new_node->data.binary_op.op = parser.previous.type;
         new_node->data.binary_op.left = node;
@@ -203,8 +205,7 @@ static ASTNode* expression() {
     ASTNode* node = term();
 
     while (match(TOKEN_PLUS) || match(TOKEN_MINUS) || match(TOKEN_GREATER) || match(TOKEN_LESS)) {
-        ASTNode* new_node = (ASTNode*)malloc(sizeof(ASTNode));
-        new_node->type = NODE_BINARY_OP;
+        ASTNode* new_node = create_node(NODE_BINARY_OP);
         new_node->line = parser.previous.line;
         new_node->data.binary_op.op = parser.previous.type;
         new_node->data.binary_op.left = node;
@@ -223,15 +224,13 @@ static ASTNode* expression() {
  * @return The parsed AST node.
  */
 static ASTNode* if_statement() {
-    ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-    node->type = NODE_IF;
+    ASTNode* node = create_node(NODE_IF);
     node->line = parser.previous.line;
 
     node->data.if_statement.condition = expression();
     consume(TOKEN_THEN, "Expect 'then' after if condition.");
 
-    ASTNode* then_branch = (ASTNode*)malloc(sizeof(ASTNode));
-    then_branch->type = NODE_STATEMENTS;
+    ASTNode* then_branch = create_node(NODE_STATEMENTS);
     then_branch->line = parser.previous.line;
     then_branch->data.statements.statement = NULL;
     ASTNode* tail = NULL;
@@ -253,8 +252,7 @@ static ASTNode* if_statement() {
     node->data.if_statement.then_branch = then_branch;
 
     if (match(TOKEN_ELSE)) {
-        ASTNode* else_branch = (ASTNode*)malloc(sizeof(ASTNode));
-        else_branch->type = NODE_STATEMENTS;
+        ASTNode* else_branch = create_node(NODE_STATEMENTS);
         else_branch->line = parser.previous.line;
         else_branch->data.statements.statement = NULL;
         tail = NULL;
@@ -290,15 +288,13 @@ static ASTNode* if_statement() {
  * @return The parsed AST node.
  */
 static ASTNode* while_statement() {
-    ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-    node->type = NODE_WHILE;
+    ASTNode* node = create_node(NODE_WHILE);
     node->line = parser.previous.line;
 
     node->data.while_statement.condition = expression();
     consume(TOKEN_DO, "Expect 'do' after while condition.");
 
-    ASTNode* body = (ASTNode*)malloc(sizeof(ASTNode));
-    body->type = NODE_STATEMENTS;
+    ASTNode* body = create_node(NODE_STATEMENTS);
     body->line = parser.previous.line;
     body->data.statements.statement = NULL;
     ASTNode* tail = NULL;
@@ -336,8 +332,7 @@ static ASTNode* statement() {
         ASTNode* expr = expression();
         consume(TOKEN_RPAREN, "Expect ')' after expression.");
 
-        ASTNode* print_node = (ASTNode*)malloc(sizeof(ASTNode));
-        print_node->type = NODE_PRINT;
+        ASTNode* print_node = create_node(NODE_PRINT);
         print_node->line = parser.previous.line;
         print_node->data.print_statement.expression = expr;
         return print_node;
@@ -356,8 +351,7 @@ static ASTNode* statement() {
         advance();
         if (match(TOKEN_ASSIGN)) {
             ASTNode* expr = expression();
-            ASTNode* assign_node = (ASTNode*)malloc(sizeof(ASTNode));
-            assign_node->type = NODE_ASSIGN;
+            ASTNode* assign_node = create_node(NODE_ASSIGN);
             assign_node->line = identifier_token.line;
             assign_node->data.assignment.identifier = (char*)malloc(identifier_token.length + 1);
             memcpy(assign_node->data.assignment.identifier, identifier_token.start, identifier_token.length);
@@ -372,8 +366,7 @@ static ASTNode* statement() {
     
     ASTNode* expr_node = expression();
     if (expr_node) {
-        ASTNode* stmt_node = (ASTNode*)malloc(sizeof(ASTNode));
-        stmt_node->type = NODE_EXPRESSION_STATEMENT;
+        ASTNode* stmt_node = create_node(NODE_EXPRESSION_STATEMENT);
         stmt_node->line = expr_node->line;
         stmt_node->data.expression_statement.expression = expr_node;
         return stmt_node;
@@ -421,8 +414,7 @@ ASTNode* parse(const char* source) {
         return NULL;
     }
 
-    ASTNode* root = (ASTNode*)malloc(sizeof(ASTNode));
-    root->type = NODE_STATEMENTS;
+    ASTNode* root = create_node(NODE_STATEMENTS);
     root->line = 0;
     root->data.statements.statement = head;
     return root;
