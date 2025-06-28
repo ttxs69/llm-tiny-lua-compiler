@@ -69,6 +69,12 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return short_instruction("OP_JUMP_IF_FALSE", chunk, offset);
         case OP_JUMP:
             return short_instruction("OP_JUMP", chunk, offset);
+        case OP_TRUE:
+            return simple_instruction("OP_TRUE", offset);
+        case OP_FALSE:
+            return simple_instruction("OP_FALSE", offset);
+        case OP_NIL:
+            return simple_instruction("OP_NIL", offset);
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;

@@ -168,6 +168,18 @@ static ASTNode* primary() {
         return expr;
     }
 
+    if (match(TOKEN_TRUE)) {
+        return create_node(NODE_TRUE);
+    }
+
+    if (match(TOKEN_FALSE)) {
+        return create_node(NODE_FALSE);
+    }
+
+    if (match(TOKEN_NIL)) {
+        return create_node(NODE_NIL);
+    }
+
     error("Expect expression.");
     return NULL; // Should not happen in valid code
 }

@@ -120,13 +120,19 @@ static TokenType identifier_type(const char* start) {
     int length = source - start;
     switch (start[0]) {
         case 'p': return check_keyword(start, length, "print", TOKEN_PRINT);
-        case 'f': return check_keyword(start, length, "function", TOKEN_FUNCTION);
+        case 'f':
+            if (length == 5 && memcmp(start, "false", 5) == 0) return TOKEN_FALSE;
+            return check_keyword(start, length, "function", TOKEN_FUNCTION);
         case 'e':
             if (length == 3 && memcmp(start, "end", 3) == 0) return TOKEN_END;
             if (length == 4 && memcmp(start, "else", 4) == 0) return TOKEN_ELSE;
             break;
         case 'i': return check_keyword(start, length, "if", TOKEN_IF);
-        case 't': return check_keyword(start, length, "then", TOKEN_THEN);
+        case 't':
+            if (length == 4 && memcmp(start, "then", 4) == 0) return TOKEN_THEN;
+            if (length == 4 && memcmp(start, "true", 4) == 0) return TOKEN_TRUE;
+            break;
+        case 'n': return check_keyword(start, length, "nil", TOKEN_NIL);
         case 'w': return check_keyword(start, length, "while", TOKEN_WHILE);
         case 'd': return check_keyword(start, length, "do", TOKEN_DO);
         case 'l': return check_keyword(start, length, "local", TOKEN_LOCAL);

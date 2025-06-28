@@ -22,11 +22,17 @@ typedef enum {
     OP_EQUAL,
     OP_NOT_EQUAL,
     OP_RETURN,
+    OP_TRUE,
+    OP_FALSE,
+    OP_NIL,
 } OpCode;
 
 typedef enum {
     VAL_NUMBER,
     VAL_STRING,
+    VAL_TRUE,
+    VAL_FALSE,
+    VAL_NIL,
 } ValueType;
 
 typedef struct {
@@ -34,6 +40,7 @@ typedef struct {
     union {
         double number;
         char* string;
+        int boolean;
     } as;
 } Value;
 

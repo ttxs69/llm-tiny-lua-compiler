@@ -15,6 +15,9 @@ typedef enum {
     NODE_STATEMENTS,
     NODE_EXPRESSION_STATEMENT,
     NODE_FUNCTION_CALL,
+    NODE_TRUE,
+    NODE_FALSE,
+    NODE_NIL,
     NODE_UNKNOWN
 } NodeType;
 

@@ -221,11 +221,8 @@ static InterpretResult run(VM* vm) {
             }
             case OP_PRINT: {
                 Value value = pop(vm);
-                if (value.type == VAL_NUMBER) {
-                    printf("%f\n", value.as.number);
-                } else if (value.type == VAL_STRING) {
-                    printf("%s\n", value.as.string);
-                }
+                print_value(value);
+                printf("\n");
                 break;
             }
             case OP_JUMP_IF_FALSE: {
@@ -242,6 +239,18 @@ static InterpretResult run(VM* vm) {
             }
             case OP_RETURN: {
                 return INTERPRET_OK;
+            }
+            case OP_TRUE: {
+                push(vm, (Value){VAL_TRUE, {.boolean = 1}});
+                break;
+            }
+            case OP_FALSE: {
+                push(vm, (Value){VAL_FALSE, {.boolean = 0}});
+                break;
+            }
+            case OP_NIL: {
+                push(vm, (Value){VAL_NIL});
+                break;
             }
         }
     }

@@ -53,6 +53,15 @@ static void generate_expression(ASTNode* node, Chunk* chunk) {
             }
             break;
         }
+        case NODE_TRUE:
+            write_chunk(chunk, OP_TRUE, node->line);
+            break;
+        case NODE_FALSE:
+            write_chunk(chunk, OP_FALSE, node->line);
+            break;
+        case NODE_NIL:
+            write_chunk(chunk, OP_NIL, node->line);
+            break;
         default:
             break; // Should not happen
     }
