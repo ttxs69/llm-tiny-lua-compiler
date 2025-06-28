@@ -49,5 +49,6 @@ void write_chunk(Chunk* chunk, uint8_t byte, int line);
 void write_short(Chunk* chunk, uint16_t value, int line);
 int add_constant(Chunk* chunk, Value value);
 void free_chunk(Chunk* chunk);
+int disassemble_instruction(Chunk* chunk, int offset);
 
 #endif // BYTECODE_H

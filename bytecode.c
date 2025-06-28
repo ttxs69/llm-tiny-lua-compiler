@@ -1,11 +1,78 @@
 #include "bytecode.h"
+#include "value.h"
 #include <stdlib.h>
+#include <stdio.h>
+
+static int simple_instruction(const char* name, int offset) {
+    printf("%s\n", name);
+    return offset + 1;
+}
+
+static int constant_instruction(const char* name, Chunk* chunk, int offset) {
+    uint8_t constant_index = chunk->code[offset + 1];
+    printf("%-16s %4d '", name, constant_index);
+    print_value(chunk->constants[constant_index]);
+    printf("'\n");
+    return offset + 2;
+}
+
+
+static int short_instruction(const char* name, Chunk* chunk, int offset) {
+    uint16_t jump = (uint16_t)(chunk->code[offset + 1] << 8 | chunk->code[offset + 2]);
+    printf("%-16s %4d\n", name, offset + 3 + jump);
+    return offset + 3;
+}
+
+int disassemble_instruction(Chunk* chunk, int offset) {
+    printf("%04d ", offset);
+    if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1]) {
+        printf("   | ");
+    } else {
+        printf("%4d ", chunk->lines[offset]);
+    }
+
+    uint8_t instruction = chunk->code[offset];
+    switch (instruction) {
+        case OP_RETURN:
+            return simple_instruction("OP_RETURN", offset);
+        case OP_CONSTANT:
+            return constant_instruction("OP_CONSTANT", chunk, offset);
+        case OP_ADD:
+            return simple_instruction("OP_ADD", offset);
+        case OP_SUBTRACT:
+            return simple_instruction("OP_SUBTRACT", offset);
+        case OP_MULTIPLY:
+            return simple_instruction("OP_MULTIPLY", offset);
+        case OP_DIVIDE:
+            return simple_instruction("OP_DIVIDE", offset);
+        case OP_GREATER:
+            return simple_instruction("OP_GREATER", offset);
+        case OP_LESS:
+            return simple_instruction("OP_LESS", offset);
+        case OP_PRINT:
+            return simple_instruction("OP_PRINT", offset);
+        case OP_POP:
+            return simple_instruction("OP_POP", offset);
+        case OP_SET_GLOBAL:
+            return constant_instruction("OP_SET_GLOBAL", chunk, offset);
+        case OP_GET_GLOBAL:
+            return constant_instruction("OP_GET_GLOBAL", chunk, offset);
+        case OP_JUMP_IF_FALSE:
+            return short_instruction("OP_JUMP_IF_FALSE", chunk, offset);
+        case OP_JUMP:
+            return short_instruction("OP_JUMP", chunk, offset);
+        default:
+            printf("Unknown opcode %d\n", instruction);
+            return offset + 1;
+    }
+}
 
 /**
  * @brief Initializes a chunk.
  * 
  * @param chunk The chunk to initialize.
  */
+
 void init_chunk(Chunk* chunk) {
     chunk->count = 0;
     chunk->capacity = 0;

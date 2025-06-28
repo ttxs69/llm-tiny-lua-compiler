@@ -1,6 +1,8 @@
 #include "vm.h"
 #include "parser.h"
 #include "codegen.h"
+#include "bytecode.h"
+#include "value.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -75,11 +77,11 @@ static InterpretResult run(VM* vm) {
         printf("          ");
         for (Value* slot = vm->stack; slot < vm->stack_top; slot++) {
             printf("[ ");
-            // TODO: Print value
+            print_value(*slot);
             printf(" ]");
         }
         printf("\n");
-        // TODO: Disassemble instruction
+        disassemble_instruction(vm->chunk, (int)(vm->ip - vm->chunk->code));
 #endif
         uint8_t instruction;
         switch (instruction = READ_BYTE()) {
