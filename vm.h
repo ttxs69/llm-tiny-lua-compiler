@@ -2,14 +2,16 @@
 #define VM_H
 
 #include "bytecode.h"
+#include "table.h"
 
 #define STACK_MAX 256
 
 typedef struct {
     Chunk* chunk;
     uint8_t* ip;
-    double stack[STACK_MAX];
-    double* stack_top;
+    Value stack[STACK_MAX];
+    Value* stack_top;
+    Table globals;
 } VM;
 
 typedef enum {

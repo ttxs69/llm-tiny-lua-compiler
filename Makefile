@@ -1,11 +1,12 @@
 CC = gcc
 CFLAGS = -Wall -g
+DBG_CFLAGS = -Wall -g -DDEBUG_TRACE_EXECUTION
 
-SRCS = main.c lexer.c parser.c codegen.c bytecode.c vm.c
+SRCS = main.c lexer.c parser.c codegen.c bytecode.c vm.c table.c
 OBJS = $(SRCS:.c=.o)
 TARGET = luac
 
-.PHONY: all clean test
+.PHONY: all clean test debug
 
 all: $(TARGET)
 
@@ -16,15 +17,10 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 test: $(TARGET)
-	./$(TARGET) test.lua > output.txt
-	@echo "Generated output:"
-	@cat output.txt
-	@if grep -q "30.000000" output.txt; then \
-		echo "Test passed!"; \
-	else \
-		echo "Test failed!"; \
-		exit 1; \
-	fi
+	./run_tests.sh
+
+debug: CFLAGS = $(DBG_CFLAGS)
+debug: all
 
 clean:
-	rm -f $(TARGET) $(OBJS) output.txt
+	rm -f $(TARGET) $(OBJS) output.txt test/*.output

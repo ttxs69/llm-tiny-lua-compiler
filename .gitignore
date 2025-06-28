@@ -1,0 +1,5 @@
+*.o
+luac
+output.txt
+test/*.output
+utput_file

@@ -3,32 +3,78 @@
 #include <ctype.h>
 #include <stdio.h>
 
+/**
+ * @brief The source code being scanned.
+ */
 static const char *source;
+/**
+ * @brief The current line number in the source code.
+ */
+static int line;
 
+/**
+ * @brief Initializes the lexer with the given source code.
+ *
+ * @param src The source code to scan.
+ */
 void init_lexer(const char *src) {
     source = src;
+    line = 1;
 }
 
-static Token make_token(TokenType type, int length) {
+/**
+ * @brief Creates a new token.
+ *
+ * @param type The type of the token.
+ * @param start A pointer to the start of the token's lexeme.
+ * @param length The length of the token's lexeme.
+ * @return The new token.
+ */
+static Token make_token(TokenType type, const char* start, int length) {
     Token token;
     token.type = type;
-    token.start = source;
+    token.start = start;
     token.length = length;
+    token.line = line;
     return token;
 }
 
+/**
+ * @brief Creates a new error token.
+ *
+ * @return The new error token.
+ */
 static Token error_token() {
     Token token;
     token.type = TOKEN_UNKNOWN;
     token.start = "Error";
     token.length = 5;
+    token.line = line;
     return token;
 }
 
+/**
+ * @brief Peeks at the current character without consuming it.
+ *
+ * @return The current character.
+ */
 static char peek() { return *source; }
+/**
+ * @brief Consumes the current character and returns it.
+ *
+ * @return The consumed character.
+ */
 static char advance() { return *source++; }
+/**
+ * @brief Checks if the end of the source code has been reached.
+ *
+ * @return 1 if the end of the source code has been reached, 0 otherwise.
+ */
 int is_at_end() { return *source == '\0'; }
 
+/**
+ * @brief Skips whitespace characters.
+ */
 static void skip_whitespace() {
     while (1) {
         char c = peek();
@@ -36,7 +82,10 @@ static void skip_whitespace() {
             case ' ':
             case '\r':
             case '\t':
+                advance();
+                break;
             case '\n':
+                line++;
                 advance();
                 break;
             default:
@@ -45,6 +94,15 @@ static void skip_whitespace() {
     }
 }
 
+/**
+ * @brief Checks if the given identifier is a keyword.
+ *
+ * @param start A pointer to the start of the identifier's lexeme.
+ * @param length The length of the identifier's lexeme.
+ * @param rest The rest of the keyword to check.
+ * @param type The type of the keyword.
+ * @return The type of the keyword if it matches, TOKEN_IDENTIFIER otherwise.
+ */
 static TokenType check_keyword(const char* start, int length, const char* rest, TokenType type) {
     if (source - start == strlen(rest) && length == strlen(rest) && memcmp(start, rest, length) == 0) {
         return type;
@@ -52,12 +110,18 @@ static TokenType check_keyword(const char* start, int length, const char* rest, 
     return TOKEN_IDENTIFIER;
 }
 
+/**
+ * @brief Determines the type of an identifier.
+ *
+ * @param start A pointer to the start of the identifier's lexeme.
+ * @return The type of the identifier.
+ */
 static TokenType identifier_type(const char* start) {
     int length = source - start;
     switch (start[0]) {
         case 'p': return check_keyword(start, length, "print", TOKEN_PRINT);
         case 'f': return check_keyword(start, length, "function", TOKEN_FUNCTION);
-        case 'e': 
+        case 'e':
             if (length == 3 && memcmp(start, "end", 3) == 0) return TOKEN_END;
             if (length == 4 && memcmp(start, "else", 4) == 0) return TOKEN_ELSE;
             break;
@@ -72,12 +136,22 @@ static TokenType identifier_type(const char* start) {
 }
 
 
+/**
+ * @brief Scans an identifier.
+ *
+ * @return The scanned identifier token.
+ */
 static Token identifier() {
     const char* start = source;
     while ((isalpha(peek()) || isdigit(peek()) || peek() == '_') && !is_at_end()) advance();
-    return make_token(identifier_type(start), source - start);
+    return make_token(identifier_type(start), start, source - start);
 }
 
+/**
+ * @brief Scans a number.
+ *
+ * @return The scanned number token.
+ */
 static Token number() {
     const char* start = source;
     while (isdigit(peek())) advance();
@@ -85,36 +159,50 @@ static Token number() {
         advance();
         while (isdigit(peek())) advance();
     }
-    return make_token(TOKEN_NUMBER, source - start);
+    return make_token(TOKEN_NUMBER, start, source - start);
 }
 
+/**
+ * @brief Scans a string.
+ *
+ * @return The scanned string token.
+ */
 static Token string() {
-    const char* start = source + 1;
+    const char* start = source;
+    advance(); // Opening quote
     while (peek() != '"' && !is_at_end()) {
         advance();
     }
     if (is_at_end()) return error_token();
     advance(); // Closing quote
-    return make_token(TOKEN_STRING, source - start - 2);
+    return make_token(TOKEN_STRING, start, source - start);
 }
 
 
+/**
+ * @brief Scans the next token.
+ *
+ * @return The next token.
+ */
 Token next_token() {
     skip_whitespace();
-    if (is_at_end()) return make_token(TOKEN_EOF, 0);
+    if (is_at_end()) return make_token(TOKEN_EOF, source, 0);
 
     char c = peek();
     if (isalpha(c) || c == '_') return identifier();
     if (isdigit(c)) return number();
 
+    const char* start = source;
     switch (c) {
-        case '(': source++; return make_token(TOKEN_LPAREN, 1);
-        case ')': source++; return make_token(TOKEN_RPAREN, 1);
-        case '+': source++; return make_token(TOKEN_PLUS, 1);
-        case '-': source++; return make_token(TOKEN_MINUS, 1);
-        case '*': source++; return make_token(TOKEN_MUL, 1);
-        case '/': source++; return make_token(TOKEN_DIV, 1);
-        case '=': source++; return make_token(TOKEN_ASSIGN, 1);
+        case '(': source++; return make_token(TOKEN_LPAREN, start, 1);
+        case ')': source++; return make_token(TOKEN_RPAREN, start, 1);
+        case '+': source++; return make_token(TOKEN_PLUS, start, 1);
+        case '-': source++; return make_token(TOKEN_MINUS, start, 1);
+        case '*': source++; return make_token(TOKEN_MUL, start, 1);
+        case '/': source++; return make_token(TOKEN_DIV, start, 1);
+        case '=': source++; return make_token(TOKEN_ASSIGN, start, 1);
+        case '>': source++; return make_token(TOKEN_GREATER, start, 1);
+        case '<': source++; return make_token(TOKEN_LESS, start, 1);
         case '"': return string();
     }
 

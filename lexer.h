@@ -15,10 +15,12 @@ typedef enum {
     TOKEN_ASSIGN,
     TOKEN_PRINT,
     TOKEN_FUNCTION,
-    TOKEN_END,
     TOKEN_IF,
     TOKEN_THEN,
     TOKEN_ELSE,
+    TOKEN_END,
+    TOKEN_GREATER,
+    TOKEN_LESS,
     TOKEN_WHILE,
     TOKEN_DO,
     TOKEN_LOCAL,
@@ -30,6 +32,7 @@ typedef struct {
     TokenType type;
     const char *start;
     int length;
+    int line;
 } Token;
 
 void init_lexer(const char *source);
