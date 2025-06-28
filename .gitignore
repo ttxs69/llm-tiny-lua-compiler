@@ -3,5 +3,4 @@ luac
 output.txt
 test/*.output
 output_file
-logs/
 *.zip
