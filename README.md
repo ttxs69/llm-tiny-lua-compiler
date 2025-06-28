@@ -1,5 +1,7 @@
 # Lua Compiler in C
 
+[![C CI](https://github.com/ttxs69/llm-tiny-lua-compiler/actions/workflows/ci.yml/badge.svg)](https://github.com/ttxs69/llm-tiny-lua-compiler/actions/workflows/ci.yml)
+
 This project is a tiny Lua compiler implemented in C. It compiles Lua source code into a custom bytecode format and executes it on a virtual machine.
 
 This repository was created with the help of the [Gemini CLI](https://github.com/google/gemini-cli).
