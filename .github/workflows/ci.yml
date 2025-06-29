@@ -15,7 +15,7 @@ jobs:
           - name: Standard
             make_args: ""
           - name: Debug
-            make_args: "ARGS=-pce"
+            make_args: "ARGS='-p -c -e'"
 
     steps:
     - uses: actions/checkout@v3
