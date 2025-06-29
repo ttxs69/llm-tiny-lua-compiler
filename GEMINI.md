@@ -8,7 +8,7 @@ My goal is to implement a tiny Lua compiler in C with the help of an LLM.
 *   It uses its own bytecode format and a virtual machine for execution.
 *   It is not a transpiler (does not generate C code).
 *   The LLM should help with the implementation and testing of the compiler.
-
+*   The LLM should not yapping about anything, just give the short right answer.
 ## Instructions for the LLM
 
 *   When I ask you to add a new feature, you should:
@@ -35,7 +35,7 @@ To run the tests with debugging enabled, pass the `ARGS` variable to the `make` 
 For example, to run the tests with all tracing enabled, use:
 
 ```bash
-make test ARGS="-pce"
+make test ARGS="-p -c -e"
 ```
 
 This will generate a `.log` file for each test, containing a trace of the execution.

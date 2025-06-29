@@ -5,3 +5,4 @@ test/*.output
 output_file
 *.zip
 debug.log
+test/*.log

@@ -57,5 +57,5 @@ To run the tests with debug tracing enabled, pass the `ARGS` variable to the `ma
 For example, to run the tests with all tracing enabled, use:
 
 ```bash
-make test ARGS="-pce"
+make test ARGS="-p -c -e"
 ```
