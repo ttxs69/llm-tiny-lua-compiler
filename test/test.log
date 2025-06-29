@@ -1,5 +1,0 @@
-Advanced to token TOKEN_PRINT 'print'
-Advanced to token TOKEN_LPAREN '('
-Advanced to token TOKEN_STRING '"hello world"'
-Advanced to token TOKEN_RPAREN ')'
-Advanced to token TOKEN_EOF ''
